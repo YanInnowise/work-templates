@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:10
+    environment:
+      - POSTGRES_PASSWORD=DatabasePassword
+      - POSTGRES_USER=root
+      - POSTGRES_DB=postgres
+    expose:
+      - 5432
+ 
+  backend:
+    build: .
+    environment:
+      - POSTGRES_URL=postgres://root:DatabasePassword@db:5432/postgres?sslmode=disable
+      - LISTEN_ADDRESS=:7000
+    depends_on:
+      - db
+
+  proxy:
+    image: nginx
+    volumes:
+      - type: bind
+        source: ./nginx.conf
+        target: /etc/nginx/nginx.conf
+    ports:
+      - 80:80
+    depends_on: 
+      - backend
+      - db
+    cap_add:
+      - chown
+      - dac_override
+      - setgid
+      - setuid
+      - net_bind_service
+      - fowner
+    
